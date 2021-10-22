@@ -1,0 +1,24 @@
+language: generic
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker build -t ksavon/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true ksavon/react-test npm test
+
+after_success:
+  - docker build -t kswest.azurecr.io/ksavon/multi-client ./client
+  - docker build -t kswest.azurecr.io/ksavon/multi-nginx ./nginx
+  - docker build -t kswest.azurecr.io/ksavon/multi-server ./server
+  - docker build -t kswest.azurecr.io/ksavon/multi-worker ./worker
+
+  # Push images to azure
+  - echo $SP_PASSWD | docker login  kswest.azurecr.io --username $SP_APP_ID --password-stdin
+  - docker push kswest.azurecr.io/ksavon/multi-client
+  - docker push kswest.azurecr.io/ksavon/multi-nginx
+  - docker push kswest.azurecr.io/ksavon/multi-server
+  - docker push kswest.azurecr.io/ksavon/multi-worker
